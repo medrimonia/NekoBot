@@ -43,12 +43,13 @@ isValidIKSolution(double alpha,
  * dst[1] -> Radius  angle solution 1
  * dst[2] -> Humerus angle solution 2
  * dst[3] -> Radius  angle solution 2
+ * return the number of solutions found
  */
-void computeIK(double * dst,
-               double x,
-               double z,
-               double l1,
-               double l2){
+int computeIK(double * dst,
+              double x,
+              double z,
+              double l1,
+              double l2){
   double possibleBeta[2];
   double possibleAlpha1[2];
   double possibleAlpha2[2];
@@ -68,13 +69,28 @@ void computeIK(double * dst,
         double alpha = possibleAlpha1[a1] + possibleAlpha2[a2];
         double beta = possibleBeta[b];
         if (isValidIKSolution(alpha, beta, l1, l2, x, z)){
-          dst[solutionIndex * 2    ] = RAD2DEG(alpha);
-          dst[solutionIndex * 2 + 1] = RAD2DEG(beta);
-          solutionIndex++;
+          //Avoiding duplicated Solutions
+          bool duplicatedSolution = false;
+          for (int i = 0; i < solutionIndex; i++){
+            if (isZero(dst[i * 2] - alpha) &&
+                isZero(dst[i * 2 + 1] - beta)){
+              duplicatedSolution = true;
+            }
+          }
+          if (!duplicatedSolution){
+            dst[solutionIndex * 2    ] = alpha;
+            dst[solutionIndex * 2 + 1] = beta;
+            solutionIndex++;
+          }
         }
       }
     }
   }
+  // Going to degrees
+  for (int i = 0; i < 2 * solutionIndex; i++){
+    dst[i] = RAD2DEG(dst[i]);
+  }
+  return solutionIndex;
 }
 
 /* Compute the fore leg angles corresponding to the asked x and z,
@@ -86,19 +102,26 @@ int computeForeLegIK(double * foreLegComputedAngles,
                      double x,
                      double z){
   double solutions[4];
-  computeIK(solutions, x, z, HUMERUS_LENGTH, RADIUS_LENGTH);
-  double solutionBestScore = 3000;
+  int nbSolutions = computeIK(solutions,
+                              x,
+                              z,
+                              HUMERUS_LENGTH,
+                              RADIUS_LENGTH);
+  double solutionBestScore = 0;
   double solutionChoosen = -1;
-  for (int solutionNo = 0; solutionNo < 2; solutionNo++){
+  for (int solutionNo = 0; solutionNo < nbSolutions; solutionNo++){
     double alpha = solutions[solutionNo * 2];
     double beta  = solutions[solutionNo * 2 + 1];
     if (alpha <  90 &&
         alpha > -90 &&
         beta  <  90 &&
         beta  > -90){
-      double score = abs(alpha - foreLegActualAngles[0]);
-      score += abs(beta - foreLegActualAngles[1]);
-      if (score < solutionBestScore){
+      double score = 1000;
+      score -= abs(alpha - foreLegActualAngles[0]);
+      score -= abs(beta - foreLegActualAngles[1]);
+      if (alpha > 0) score -= 400;
+      if (beta < 0)  score -= 200;
+      if (score > solutionBestScore){
         solutionChoosen = solutionNo;
         solutionBestScore = score;
         foreLegComputedAngles[0] = alpha;
@@ -109,6 +132,7 @@ int computeForeLegIK(double * foreLegComputedAngles,
   if (solutionChoosen == -1){
     return -1;
   }
+  return 0;
 }
 
 /* Compute the fore leg angles corresponding to the asked x and z,
@@ -121,3 +145,14 @@ int computeRearLegIK(double * foreLegComputedAngles,
                      double z){
   //TODO
 }
+
+/*Used for debug
+int main(int argc, char ** argv){
+  double actualAngles[2] = {0,0};
+  double computedAngles[2];
+  computeForeLegIK(computedAngles,
+                   actualAngles,
+                   0,
+                   160);
+}
+//*/
