@@ -15,7 +15,7 @@ TERMINAL_PARAMETER_DOUBLE(timeSpeed, "Speed of the time", 1.0);
 
 TERMINAL_PARAMETER_BOOL(freeMove,
                         "Disable all control on servoMotors",
-                        true);
+                        false);
 
 // IK PARAMETERS
 TERMINAL_PARAMETER_DOUBLE(defaultAntX,
@@ -29,6 +29,11 @@ TERMINAL_PARAMETER_DOUBLE(defaultAntZ,
 TERMINAL_PARAMETER_DOUBLE(stepLength, "Length of a step [mm]", 60.0);
 TERMINAL_PARAMETER_DOUBLE(stepHeight, "Height of a step [mm]", 30.0);
 
+// DEBUG VALUES
+TERMINAL_PARAMETER_DOUBLE(failedAntX, "", 0.0);
+TERMINAL_PARAMETER_DOUBLE(failedAntZ, "", 0.0);
+
+
 
 Position<NB_SERVOS> targetPosition;
 Position<NB_SERVOS> lastPosition;
@@ -38,9 +43,9 @@ Function walkingZ;
 
 void registerServoMotors(){
   servos_register(4, "AntLeft2");
-  servos_calibrate(0, 1500, 4650, 7500, false);
+  servos_calibrate(0, 1500, 4650, 6240, false);
   servos_register(5, "AntRight2");
-  servos_calibrate(1, 1500, 4400, 7500, true);
+  servos_calibrate(1, 2900, 4400, 7500, true);
   servos_register(8, "AntLeft1");
   servos_calibrate(2, 1500, 4300, 7500, false);
   servos_register(9, "AntRight1");
@@ -81,7 +86,7 @@ void testIK(){
                            actualAngles,
                            defaultAntX,
                            defaultAntZ);
-  //TODO if r == -1
+  //TODO if (r == -1
   targetPosition.setAntLeftAngles(wishedAngles);
   targetPosition.setAntRightAngles(wishedAngles);
 }
@@ -96,14 +101,32 @@ void move(){
   double wishedAntLeft[2];
   double wishedAntRight[2];
   double actualAngles[2] = {0};//TODO, to treat
-  computeForeLegIK(wishedAntLeft,
-                   actualAngles,
-                   defaultAntX + walkingX.getMod(time1) * stepLength / 2,
-                   defaultAntZ - walkingZ.getMod(time1) * stepHeight);
-  computeForeLegIK(wishedAntRight,
-                   actualAngles,
-                   defaultAntX + walkingX.getMod(time2) * stepLength / 2,
-                   defaultAntZ - walkingZ.getMod(time2) * stepHeight);
+  int r1, r2;
+  double leftAntX = defaultAntX + walkingX.getMod(time1) * stepLength / 2;
+  double leftAntZ = defaultAntZ - walkingZ.getMod(time1) * stepHeight;
+  double rightAntX = defaultAntX + walkingX.getMod(time2) * stepLength / 2;
+  double rightAntZ = defaultAntZ - walkingZ.getMod(time2) * stepHeight;
+  r1 = computeForeLegIK(wishedAntLeft,
+                        actualAngles,
+                        leftAntX,
+                        leftAntZ);
+  r2 = computeForeLegIK(wishedAntRight,
+                        actualAngles,
+                        rightAntX,
+                        rightAntZ);
+  //If one of the IK failed, 
+  if (r1 == -1 || r2 == -1){
+    if (r1 == -1){
+      failedAntX = leftAntX;
+      failedAntZ = leftAntZ;
+    }
+    if (r2 == -1){
+      failedAntX = rightAntX;
+      failedAntZ = rightAntZ;
+    }
+    freeMove = true;
+    return;
+  }
   targetPosition.setAntLeftAngles(wishedAntLeft);
   targetPosition.setAntRightAngles(wishedAntRight);
 }

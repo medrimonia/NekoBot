@@ -6,6 +6,8 @@
 #include "InverseKinematics.hpp"
 #include "Utils.hpp"
 
+//#define DEBUG_IK
+
 #define HUMERUS_LENGTH  77.2
 #define RADIUS_LENGTH   100.8
 
@@ -23,6 +25,15 @@
  * z  : vertical distance (always positive)
  *****************************************************************************/
 
+double normalizeAngle(double angle){
+  if (angle > 180.0){
+    return angle - 360;
+  }
+  if (angle < -180.0){
+    return angle + 360;
+  }
+  return angle;
+}
 
 bool
 isValidIKSolution(double alpha,
@@ -107,25 +118,35 @@ int computeForeLegIK(double * foreLegComputedAngles,
                               z,
                               HUMERUS_LENGTH,
                               RADIUS_LENGTH);
+#ifdef DEBUG_IK
+  printf("There's %d solutions before scoring\n", nbSolutions);
+#endif
   double solutionBestScore = 0;
   double solutionChoosen = -1;
   for (int solutionNo = 0; solutionNo < nbSolutions; solutionNo++){
-    double alpha = solutions[solutionNo * 2];
-    double beta  = solutions[solutionNo * 2 + 1];
+    double alpha = normalizeAngle(solutions[solutionNo * 2]);
+    double beta  = normalizeAngle(solutions[solutionNo * 2 + 1]);
+#ifdef DEBUG_IK
+    printf("Solution %d:\n", solutionNo);
+    printf("\tAlpha : %f\n", alpha);
+    printf("\tBeta  : %f\n", beta);
+#endif
     if (alpha <  90 &&
         alpha > -90 &&
-        beta  <  90 &&
-        beta  > -90){
+        beta  <  160 &&
+        beta  >  0){
       double score = 1000;
       score -= abs(alpha - foreLegActualAngles[0]);
       score -= abs(beta - foreLegActualAngles[1]);
       if (alpha > 0) score -= 400;
-      if (beta < 0)  score -= 200;
+#ifdef DEBUG_IK
+      printf("\tScore : %f\n", score);
+#endif
       if (score > solutionBestScore){
         solutionChoosen = solutionNo;
         solutionBestScore = score;
         foreLegComputedAngles[0] = alpha;
-        foreLegComputedAngles[1] = beta;
+        foreLegComputedAngles[1] = beta - 90;
       }
     }
   }
@@ -146,13 +167,13 @@ int computeRearLegIK(double * foreLegComputedAngles,
   //TODO
 }
 
-/*Used for debug
+#ifdef DEBUG_IK
 int main(int argc, char ** argv){
   double actualAngles[2] = {0,0};
   double computedAngles[2];
   computeForeLegIK(computedAngles,
                    actualAngles,
-                   0,
-                   160);
+                   -6,
+                   126);
 }
-//*/
+#endif
