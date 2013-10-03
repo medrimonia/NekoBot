@@ -41,17 +41,6 @@ Position<NB_SERVOS> lastStatePosition;
 Function walkingX;
 Function walkingZ;
 
-void registerServoMotors(){
-  servos_register(4, "AntLeft2");
-  servos_calibrate(0, 1500, 4650, 6240, false);
-  servos_register(5, "AntRight2");
-  servos_calibrate(1, 2900, 4400, 7500, true);
-  servos_register(8, "AntLeft1");
-  servos_calibrate(2, 1500, 4300, 7500, false);
-  servos_register(9, "AntRight1");
-  servos_calibrate(3, 1500, 4400, 7500, true);
-}
-
 #define STEP_DURATION 0.2
 void initWalking(){
   // X in the middle, foot in the air

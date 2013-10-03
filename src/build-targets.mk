@@ -1,7 +1,7 @@
 # Project targets
 # Defines here your cpp source files
 # Ex : main.cpp test.cpp ...
-SRC_FILES = main.cpp InverseKinematics.cpp Utils.cpp
+SRC_FILES = main.cpp InverseKinematics.cpp ServoConfig.cpp Utils.cpp
 OBJ_FILES = $(addprefix $(BUILD_PATH)/,$(SRC_FILES:.cpp=.o))
 
 $(BUILD_PATH)/%.o: %.cpp
