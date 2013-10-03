@@ -33,6 +33,8 @@ TERMINAL_PARAMETER_DOUBLE(stepHeight, "Height of a step [mm]", 30.0);
 // DEBUG VALUES
 TERMINAL_PARAMETER_DOUBLE(failedAntX, "", 0.0);
 TERMINAL_PARAMETER_DOUBLE(failedAntZ, "", 0.0);
+TERMINAL_PARAMETER_DOUBLE(failedPostX, "", 0.0);
+TERMINAL_PARAMETER_DOUBLE(failedPostZ, "", 0.0);
 
 
 
@@ -101,22 +103,37 @@ void move(){
   double time2 = t + 0.5;
   double wishedAntLeft[2];
   double wishedAntRight[2];
-  double actualAngles[2] = {0};//TODO, to treat
-  int r1, r2;
+  double wishedPostLeft[3];
+  double wishedPostRight[3];
+  double actualForeAngles[2] = {0};//TODO, to treat
+  double actualRearAngles[3] = {0};//TODO, to treat
+  int r1, r2, r3, r4;
   double leftAntX = defaultAntX + walkingX.getMod(time1) * stepLength / 2;
   double leftAntZ = defaultAntZ - walkingZ.getMod(time1) * stepHeight;
   double rightAntX = defaultAntX + walkingX.getMod(time2) * stepLength / 2;
   double rightAntZ = defaultAntZ - walkingZ.getMod(time2) * stepHeight;
   r1 = computeForeLegIK(wishedAntLeft,
-                        actualAngles,
+                        actualForeAngles,
                         leftAntX,
                         leftAntZ);
   r2 = computeForeLegIK(wishedAntRight,
-                        actualAngles,
+                        actualForeAngles,
+                        rightAntX,
+                        rightAntZ);
+  // Inverting side for rear legs
+  r3 = computeRearLegIK(wishedPostRight,
+                        actualRearAngles,
+                        leftAntX,
+                        leftAntZ);
+  r4 = computeRearLegIK(wishedPostLeft,
+                        actualRearAngles,
                         rightAntX,
                         rightAntZ);
   //If one of the IK failed, 
-  if (r1 == -1 || r2 == -1){
+  if (r1 == -1 ||
+      r2 == -1 ||
+      r3 == -1 ||
+      r4 == -1){
     if (r1 == -1){
       failedAntX = leftAntX;
       failedAntZ = leftAntZ;
@@ -125,11 +142,21 @@ void move(){
       failedAntX = rightAntX;
       failedAntZ = rightAntZ;
     }
+    if (r4 == -1){
+      failedPostX = leftAntX;
+      failedPostZ = leftAntZ;
+    }
+    if (r3 == -1){
+      failedPostX = rightAntX;
+      failedPostZ = rightAntZ;
+    }
     freeMove = true;
     return;
   }
   targetPosition.setAntLeftAngles(wishedAntLeft);
   targetPosition.setAntRightAngles(wishedAntRight);
+  targetPosition.setPostLeftAngles(wishedPostLeft);
+  targetPosition.setPostRightAngles(wishedPostRight);
 }
 
 /**
