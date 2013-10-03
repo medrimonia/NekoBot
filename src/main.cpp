@@ -26,7 +26,8 @@ TERMINAL_PARAMETER_DOUBLE(defaultAntZ,
                           150.0);
 
 // WALK PARAMETERS
-TERMINAL_PARAMETER_DOUBLE(stepLength, "Length of a step [mm]", 60.0);
+// Classic StepLength is 6
+TERMINAL_PARAMETER_DOUBLE(stepLength, "Length of a step [mm]",  0.0);
 TERMINAL_PARAMETER_DOUBLE(stepHeight, "Height of a step [mm]", 30.0);
 
 // DEBUG VALUES
@@ -67,21 +68,32 @@ void setup(){
 }
 
 void testIK(){
-  double actualAngles[2];
-  actualAngles[0] = lastPosition.angles[SERVO_AntLeft1];
-  actualAngles[1] = lastPosition.angles[SERVO_AntLeft2];
-  double wishedAngles[2];
-  int r = computeForeLegIK(wishedAngles,
-                           actualAngles,
+  double actualForeAngles[2];
+  actualForeAngles[0] = lastPosition.angles[SERVO_AntLeft1];
+  actualForeAngles[1] = lastPosition.angles[SERVO_AntLeft2];
+  double wishedForeAngles[2];
+  int r = computeForeLegIK(wishedForeAngles,
+                           actualForeAngles,
                            defaultAntX,
                            defaultAntZ);
-  //TODO if (r == -1
-  targetPosition.setAntLeftAngles(wishedAngles);
-  targetPosition.setAntRightAngles(wishedAngles);
+  double actualRearAngles[3];
+  actualRearAngles[0] = lastPosition.angles[SERVO_PostLeft1];
+  actualRearAngles[1] = lastPosition.angles[SERVO_PostLeft2];
+  actualRearAngles[2] = lastPosition.angles[SERVO_PostLeft3];
+  double wishedRearAngles[3];
+  int r2 = computeRearLegIK(wishedRearAngles,
+                            actualRearAngles,
+                            defaultAntX,
+                            defaultAntZ);
+  //TODO if (r == -1 || r2 == -1)
+  targetPosition.setAntLeftAngles(wishedForeAngles);
+  targetPosition.setAntRightAngles(wishedForeAngles);
+  targetPosition.setPostLeftAngles(wishedRearAngles);
+  targetPosition.setPostRightAngles(wishedRearAngles);
 }
 
 bool isMoving(){
-  return true;
+  return stepLength > 1;
 }
 
 void move(){

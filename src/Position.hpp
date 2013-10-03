@@ -28,6 +28,18 @@ public:
     angles[SERVO_AntRight2] = values[1];
   }
 
+  void setPostLeftAngles(double * values){
+    angles[SERVO_PostLeft1] = values[0];
+    angles[SERVO_PostLeft2] = values[1];
+    angles[SERVO_PostLeft3] = values[2];
+  }
+
+  void setPostRightAngles(double * values){
+    angles[SERVO_PostRight1] = values[0];
+    angles[SERVO_PostRight2] = values[1];
+    angles[SERVO_PostRight3] = values[2];
+  }
+
   void apply() const{
     for (int i = 0; i < N; i++){
       servos_command(i, angles[i]);

@@ -8,8 +8,18 @@
 
 //#define DEBUG_IK
 
-#define HUMERUS_LENGTH  77.2
+#define HUMERUS_LENGTH   77.2
 #define RADIUS_LENGTH   100.8
+
+//TODO check
+#define FEMUR_LENGTH     55
+#define TIBIA_LENGTH     77
+
+//TODO check
+#define REAR_FOOT_DX    30.0
+#define REAR_FOOT_DZ    40.0
+#define REAR_FOOT_ANGLE 25.0
+#define PELVIS_ANGLE    25.0
 
 #define PI 3.14159265
 
@@ -25,6 +35,7 @@
  * z  : vertical distance (always positive)
  *****************************************************************************/
 
+// Return the angle between 180 and -180
 double normalizeAngle(double angle){
   if (angle > 180.0){
     return angle - 360;
@@ -160,20 +171,80 @@ int computeForeLegIK(double * foreLegComputedAngles,
  * Place the best solution (closest to the last known) in the given array.
  * Return -1 if IK did not give any possible result.
  */
-int computeRearLegIK(double * foreLegComputedAngles,
-                     double * foreLegActualAngles,
+int computeRearLegIK(double * rearLegComputedAngles,
+                     double * rearLegActualAngles,
                      double x,
                      double z){
-  //TODO
+  double solutions[4];
+  x = x - REAR_FOOT_DX;
+  z = z - REAR_FOOT_DZ;
+  int nbSolutions = computeIK(solutions,
+                              x,
+                              z,
+                              FEMUR_LENGTH,
+                              TIBIA_LENGTH);
+#ifdef DEBUG_IK
+  printf("There's %d solutions before scoring\n", nbSolutions);
+  printf("Reminder: wanted = {%lf,%lf}\n", x, z);
+#endif
+  double solutionBestScore = 0;
+  double solutionChoosen = -1;
+  for (int solutionNo = 0; solutionNo < nbSolutions; solutionNo++){
+    //computing third angles
+    double alpha = normalizeAngle(solutions[solutionNo * 2]);
+    double beta  = normalizeAngle(solutions[solutionNo * 2 + 1]);
+    double gamma = normalizeAngle(REAR_FOOT_ANGLE - 90 - alpha - beta);
+    // Adjusting angles
+    alpha -= PELVIS_ANGLE;
+    beta += 90;
+#ifdef DEBUG_IK
+    printf("Solution %d:\n" , solutionNo);
+    printf("\tAlpha : %f\n" , alpha);
+    printf("\tBeta  : %f\n" , beta);
+    printf("\tGamma  : %f\n", gamma);
+#endif
+    if (alpha <  90 &&
+        alpha > -90 &&
+        beta  <  90 &&
+        beta  > -75 &&
+        gamma <  51 &&
+        gamma > -90){
+      double score = 1000;
+      score -= abs(alpha - rearLegActualAngles[0]);
+      score -= abs(beta  - rearLegActualAngles[1]);
+      score -= abs(gamma - rearLegActualAngles[2]);
+      if (alpha < 0) score -= 400;
+#ifdef DEBUG_IK
+      printf("\tScore : %f\n", score);
+#endif
+      if (score > solutionBestScore){
+        solutionChoosen = solutionNo;
+        solutionBestScore = score;
+        rearLegComputedAngles[0] = alpha;
+        rearLegComputedAngles[1] = beta;
+        rearLegComputedAngles[2] = gamma;
+      }
+    }
+  }
+  if (solutionChoosen == -1){
+    return -1;
+  }
+  return 0;
 }
 
 #ifdef DEBUG_IK
 int main(int argc, char ** argv){
-  double actualAngles[2] = {0,0};
-  double computedAngles[2];
-  computeForeLegIK(computedAngles,
-                   actualAngles,
-                   -6,
-                   126);
+  double actualForeAngles[2] = {0,0};
+  double computedForeAngles[2];
+  computeForeLegIK(computedForeAngles,
+                   actualForeAngles,
+                   0,
+                   150);
+  double actualRearAngles[3] = {0};
+  double computedRearAngles[3];
+  computeRearLegIK(computedRearAngles,
+                   actualRearAngles,
+                   0,
+                   150);
 }
 #endif
