@@ -95,7 +95,7 @@ void testIK(){
 }
 
 bool isMoving(){
-  return stepLength > 1;
+  return abs(stepLength) > 1;
 }
 
 void move(){
