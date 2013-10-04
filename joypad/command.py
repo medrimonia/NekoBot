@@ -4,7 +4,7 @@
 from pypad import *
 from terminalcontrol import *
 
-robot = ('10.0.0.1', 2000) # Robot address
+robot = ('10.0.0.77', 4242) # Robot address
 joypad = '/dev/input/js0'  # Joypad device
 
 
@@ -25,10 +25,10 @@ except:
 # Bindings
 pad.onButtonPressed(14, lambda: terminal.send('Hello!'))
 pad.onButtonReleased(14, lambda: terminal.send('GoodBye!'))
-pad.onAxis(0, lambda v: terminal.send('amp1', v))
-pad.onAxis(1, lambda v: terminal.send('amp2', v))
-pad.onAxis(2, lambda v: terminal.send('amp3', v))
-pad.onAxis(3, lambda v: terminal.send('amp4', v))
+pad.onAxis(0, lambda v: terminal.send('rotationOrder', v))
+pad.onAxis(1, lambda v: terminal.send('forwardOrder', -v))
+pad.onAxis(2, lambda v: terminal.send('timeSpeed', 1 + v))
+pad.onAxis(3, lambda v: terminal.send('defaultZ', 130 - v * 20))
 
 enabled = False
 def ToggleEnable():
@@ -39,7 +39,7 @@ def ToggleEnable():
     else:
         terminal.send('stop')
 
-pad.onButtonPressed(16, ToggleEnable)
+pad.onButtonPressed(2, ToggleEnable)
 
 
 try:
