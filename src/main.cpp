@@ -38,11 +38,11 @@ TERMINAL_PARAMETER_INT(shooting, "Is the robot shooting and from which?", 0);
 TERMINAL_PARAMETER_DOUBLE(shootPreparationTime,
                           "Time of preparation for shoot",
                           0.7);
-TERMINAL_PARAMETER_DOUBLE(shootingTime, "Time of shoot", 0.3);
+TERMINAL_PARAMETER_DOUBLE(shootingTime, "Time of shoot", 0.1);
 TERMINAL_PARAMETER_DOUBLE(preparationDeltaX,
                           "Delta x for shoot preparation",
                           -20);
-TERMINAL_PARAMETER_DOUBLE(shootDeltaX, "Delta x for shoot", 60);
+TERMINAL_PARAMETER_DOUBLE(shootDeltaX, "Delta x for shoot", 80);
 TERMINAL_PARAMETER_DOUBLE(shootDeltaZ, "Delta z for shoo", -20);
 
 // HIGH LEVEL ORDERS
@@ -195,7 +195,7 @@ void shoot(){
   if (elapsedTime < shootPreparationTime){
     partDone = elapsedTime / shootPreparationTime;
     shootingLegX = defaultX + preparationDeltaX * partDone;
-    shootingLegZ = defaultZ + shootDeltaZ;
+    shootingLegZ = defaultZ + shootDeltaZ * partDone;
   }
   //TODO this part doesn't seem to work well
   else{
@@ -203,7 +203,7 @@ void shoot(){
     shootingLegX = crossfadedValue(defaultX + preparationDeltaX,
                                    defaultX + shootDeltaX,
                                    partDone);
-    shootingLegZ = defaultZ;
+    shootingLegZ = defaultZ + shootDeltaZ;
   }
   double actualShootingLeg[2] = {0};//TODO, to treat
   double wishedShootingLeg[2] = {0};
