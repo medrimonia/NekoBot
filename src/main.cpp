@@ -18,9 +18,12 @@ TERMINAL_PARAMETER_BOOL(freeMove,
                         false);
 
 // IK PARAMETERS
-TERMINAL_PARAMETER_DOUBLE(defaultX,
+TERMINAL_PARAMETER_DOUBLE(defaultAntX,
                           "Default x for legs [mm]",
-                          0.0);
+                          -30.0);
+TERMINAL_PARAMETER_DOUBLE(defaultPostX,
+                          "Default x for legs [mm]",
+                          20.0);
 TERMINAL_PARAMETER_DOUBLE(defaultZ,
                           "Default z for legs [mm]",
                           150.0);
@@ -38,12 +41,12 @@ TERMINAL_PARAMETER_INT(shooting, "Is the robot shooting and from which?", 0);
 TERMINAL_PARAMETER_DOUBLE(shootPreparationTime,
                           "Time of preparation for shoot",
                           0.7);
-TERMINAL_PARAMETER_DOUBLE(shootingTime, "Time of shoot", 0.1);
+TERMINAL_PARAMETER_DOUBLE(shootingTime, "Time of shoot", 0.17);
 TERMINAL_PARAMETER_DOUBLE(preparationDeltaX,
                           "Delta x for shoot preparation",
                           -20);
-TERMINAL_PARAMETER_DOUBLE(shootDeltaX, "Delta x for shoot", 80);
-TERMINAL_PARAMETER_DOUBLE(shootDeltaZ, "Delta z for shoo", -20);
+TERMINAL_PARAMETER_DOUBLE(shootDeltaX, "Delta x for shoot",120);
+TERMINAL_PARAMETER_DOUBLE(shootDeltaZ, "Delta z for shoot",-20);
 
 // HIGH LEVEL ORDERS
 TERMINAL_PARAMETER_DOUBLE(forwardOrder, "percent of forward Order", 0.0);
@@ -161,7 +164,7 @@ void testIK(){
   double wishedForeAngles[2];
   int r = computeForeLegIK(wishedForeAngles,
                            actualForeAngles,
-                           defaultX,
+                           defaultAntX,
                            defaultZ);
   double actualRearAngles[3];
   actualRearAngles[0] = lastPosition.angles[SERVO_PostLeft1];
@@ -170,7 +173,7 @@ void testIK(){
   double wishedRearAngles[3];
   int r2 = computeRearLegIK(wishedRearAngles,
                             actualRearAngles,
-                            defaultX,
+                            defaultPostX,
                             defaultZ);
   //TODO if (r == -1 || r2 == -1)
   targetPosition.setAntLeftAngles(wishedForeAngles);
@@ -194,14 +197,14 @@ void shoot(){
   double partDone;
   if (elapsedTime < shootPreparationTime){
     partDone = elapsedTime / shootPreparationTime;
-    shootingLegX = defaultX + preparationDeltaX * partDone;
+    shootingLegX = defaultAntX + preparationDeltaX * partDone;
     shootingLegZ = defaultZ + shootDeltaZ * partDone;
   }
   //TODO this part doesn't seem to work well
   else{
     partDone = (elapsedTime - shootPreparationTime) / shootingTime;
-    shootingLegX = crossfadedValue(defaultX + preparationDeltaX,
-                                   defaultX + shootDeltaX,
+    shootingLegX = crossfadedValue(defaultAntX + preparationDeltaX,
+                                   defaultAntX + shootDeltaX,
                                    partDone);
     shootingLegZ = defaultZ + shootDeltaZ;
   }
@@ -245,14 +248,14 @@ void move(){
   leftStep  = stepLength * (getFwdOrder() + getRotOrder());
   rightStep = stepLength * (getFwdOrder() - getRotOrder());
   // Leg positions
-  leftAntX   = defaultX + walkingX.getMod(time1) * leftStep / 2.0;
-  leftAntZ   = defaultZ - walkingZ.getMod(time1) * stepHeight;
-  rightAntX  = defaultX + walkingX.getMod(time2) * rightStep / 2.0;
-  rightAntZ  = defaultZ - walkingZ.getMod(time2) * stepHeight;
-  leftPostX  = defaultX + walkingX.getMod(time2) * leftStep / 2.0;
-  leftPostZ  = defaultZ - walkingZ.getMod(time2) * stepHeight;
-  rightPostX = defaultX + walkingX.getMod(time1) * rightStep / 2.0;
-  rightPostZ = defaultZ - walkingZ.getMod(time1) * stepHeight;
+  leftAntX   = defaultAntX  + walkingX.getMod(time1) * leftStep / 2.0;
+  leftAntZ   = defaultZ     - walkingZ.getMod(time1) * stepHeight;
+  rightAntX  = defaultAntX  + walkingX.getMod(time2) * rightStep / 2.0;
+  rightAntZ  = defaultZ     - walkingZ.getMod(time2) * stepHeight;
+  leftPostX  = defaultPostX + walkingX.getMod(time2) * leftStep / 2.0;
+  leftPostZ  = defaultZ     - walkingZ.getMod(time2) * stepHeight;
+  rightPostX = defaultPostX + walkingX.getMod(time1) * rightStep / 2.0;
+  rightPostZ = defaultZ     - walkingZ.getMod(time1) * stepHeight;
   // Computing IK
   int r1, r2, r3, r4;
   r1 = computeForeLegIK(wishedAntLeft,
